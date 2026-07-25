@@ -81,7 +81,7 @@ function App() {
       <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3 text-blue-600 font-bold text-xl">
-            <BookOpen className="w-6 h-6" />
+            <img src="./icon.jpg" alt="Icon" className="w-8 h-8 rounded-lg shadow-2xs border border-blue-200 object-cover" />
             <span>國語預習單生成系統</span>
           </div>
           <div className="flex items-center gap-4">
