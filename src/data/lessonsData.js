@@ -1434,7 +1434,7 @@ export const lessonsData = [
   {
     "id": 7,
     "title": "跟著公共藝術去旅行",
-    "author": "張美智",
+    "author": "張育雯",
     "type": "記敘文",
     "paragraphs": 6,
     "parts": 3,
@@ -1652,7 +1652,7 @@ export const lessonsData = [
   {
     "id": 8,
     "title": "街頭藝術家",
-    "author": "馬景賢",
+    "author": "桂文亞",
     "type": "記敘文",
     "paragraphs": 9,
     "parts": 3,
@@ -1885,7 +1885,7 @@ export const lessonsData = [
   {
     "id": 9,
     "title": "戲臺上的她與他",
-    "author": "專訪",
+    "author": "李光福",
     "type": "採訪稿",
     "paragraphs": 8,
     "parts": 3,
@@ -2323,7 +2323,7 @@ export const lessonsData = [
   {
     "id": 11,
     "title": "來一碗溫暖的羹湯",
-    "author": "簡媜",
+    "author": "陳維鸚",
     "type": "記敘文",
     "paragraphs": 6,
     "parts": 3,
@@ -2522,7 +2522,7 @@ export const lessonsData = [
   {
     "id": 12,
     "title": "存根",
-    "author": "阿盛",
+    "author": "阿拉爾孔",
     "type": "小說",
     "paragraphs": 25,
     "parts": 5,
