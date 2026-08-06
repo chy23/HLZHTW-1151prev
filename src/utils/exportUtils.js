@@ -1,4 +1,6 @@
 
+import html2pdf from 'html2pdf.js';
+
 function shuffleArray(array) {
   const newArr = [...array];
   for (let i = newArr.length - 1; i > 0; i--) {
@@ -8,20 +10,23 @@ function shuffleArray(array) {
   return newArr;
 }
 
-export function getExportHTMLContent(lesson, selections, isTeacher, paperSize = 'a4') {
-  // Filter selected items based on ID or index. 
-  // Let's assume selections is an object with sets of selected indices for each type.
-  const selectedVocab = lesson.vocab.filter((_, i) => selections.vocab.has(i));
-  const selectedFillIn = lesson.fillIn.filter((_, i) => selections.fillIn.has(i));
-  const selectedQuestions = lesson.questions.filter((_, i) => selections.questions.has(i));
+export function getExportHTMLContent(lessonsDataList, isTeacher, paperSize = 'a4', customTitle = '', customWatermark = '') {
+  let allHtml = '';
+  
+  lessonsDataList.forEach((item, index) => {
+    const lesson = item.lesson;
+    const selections = item.selections;
+    
+    const selectedVocab = lesson.vocab.filter((_, i) => selections.vocab.has(i));
+    const selectedFillIn = lesson.fillIn.filter((_, i) => selections.fillIn.has(i));
+    const selectedQuestions = lesson.questions.filter((_, i) => selections.questions.has(i));
 
-  const unselectedFillIn = lesson.fillIn.filter((_, i) => !selections.fillIn.has(i));
-  const distractors = [...unselectedFillIn].sort(() => 0.5 - Math.random()).slice(0, 2);
-  const wordBankAnswers = [...selectedFillIn.map(item => item.answer), ...distractors.map(item => item.answer)];
+    const unselectedFillIn = lesson.fillIn.filter((_, i) => !selections.fillIn.has(i));
+    const distractors = [...unselectedFillIn].sort(() => 0.5 - Math.random()).slice(0, 2);
+    const wordBankAnswers = [...selectedFillIn.map(fill => fill.answer), ...distractors.map(dist => dist.answer)];
 
-  const wordBank = shuffleArray(wordBankAnswers);
+    const wordBank = shuffleArray(wordBankAnswers);
 
-  const generatePage = (isTeacher) => {
     // Task 1
     const pCountText = isTeacher ? `<span style="color:red; font-weight:bold;">${lesson.paragraphs}</span>` : '＿＿＿';
     const criteriaText = isTeacher ? `<div style="color:red; font-weight:bold; margin-top: 5px; line-height: 1.6;">${lesson.criteria || ''}</div>` : '';
@@ -55,13 +60,13 @@ export function getExportHTMLContent(lesson, selections, isTeacher, paperSize = 
     }
 
     let fillInHtml = '';
-    selectedFillIn.forEach((item, index) => {
-      let sentence = item.sentence;
+    selectedFillIn.forEach((fillItem, fillIndex) => {
+      let sentence = fillItem.sentence;
       const blank = isTeacher 
-        ? `( <span style="color:red; font-weight:bold;">${item.answer}</span> )` 
+        ? `( <span style="color:red; font-weight:bold;">${fillItem.answer}</span> )` 
         : `（　　　　　　　）`;
       sentence = sentence.replace(/（\s*）|\(\s*\)/g, blank);
-      fillInHtml += `<div style="margin-bottom: 12px; line-height: 1.8;">(${index + 1}) ${sentence}</div>`;
+      fillInHtml += `<div style="margin-bottom: 12px; line-height: 1.8;">(${fillIndex + 1}) ${sentence}</div>`;
     });
 
     // Task 4
@@ -76,11 +81,11 @@ export function getExportHTMLContent(lesson, selections, isTeacher, paperSize = 
           ? `<div style="color:red; margin-top: 8px;">${q.a}</div>` 
           : `<br/><br/><br/><br/><br/>`;
           
-        let tagBg = '#475569'; // default slate-600
-        if (q.type === '提取訊息') tagBg = '#2563eb'; // blue-600
-        if (q.type === '推論訊息') tagBg = '#f97316'; // orange-500
-        if (q.type === '詮釋整合') tagBg = '#16a34a'; // green-600
-        if (q.type === '比較評估') tagBg = '#9333ea'; // purple-600
+        let tagBg = '#475569';
+        if (q.type === '提取訊息') tagBg = '#2563eb';
+        if (q.type === '推論訊息') tagBg = '#f97316';
+        if (q.type === '詮釋整合') tagBg = '#16a34a';
+        if (q.type === '比較評估') tagBg = '#9333ea';
         
         const tag = isTeacher ? `<span style="background-color:${tagBg}; color:white; padding: 2px 6px; font-size: 12px; margin-left: 6px; border-radius: 2px; font-weight: bold; white-space: nowrap;">${q.type}</span>` : '';
         
@@ -94,12 +99,21 @@ export function getExportHTMLContent(lesson, selections, isTeacher, paperSize = 
         </tr>
       `;
     }
+    
+    let headerTitle = customTitle || `115 六上國語預習講義 翰林版`;
+    headerTitle += ` 第 ${lesson.id} \课 &nbsp;&nbsp;${lesson.title}&nbsp;&nbsp; 作者 ： ${lesson.author}`;
 
-    return `
+    const watermarkHtml = customWatermark ? `
+      <div style="position: fixed; top: 50px; right: 20px; font-size: 18pt; color: #a1a1aa; opacity: 0.25; font-weight: bold; z-index: -1;">${customWatermark}</div>
+      <div style="position: fixed; bottom: 50px; right: 20px; font-size: 18pt; color: #a1a1aa; opacity: 0.25; font-weight: bold; z-index: -1;">${customWatermark}</div>
+    ` : '';
+
+    const pageHtml = `
+      ${watermarkHtml}
       <div style="font-family: '標楷體', 'BiauKai', 'DFKai-SB'; margin: 0 auto; width: 100%; max-width: 800px; color: #000; line-height: 1.6; font-size: 14pt; min-height: 100vh;">
         
         <div style="text-align: center; font-size: 18pt; font-weight: bold; margin-bottom: 10px;">
-          115 六上國語預習講義 翰林版 第 ${lesson.id} 課 &nbsp;&nbsp;${lesson.title}&nbsp;&nbsp; 作者 ： ${lesson.author}
+          ${headerTitle}
         </div>
         <div style="text-align: center; font-size: 14pt; margin-bottom: 25px;">
           <span style="font-weight: bold;">（${isTeacher ? '教用版' : '學用版'}）</span> 班級：_______ 座號：_______ 姓名：_____________
@@ -139,24 +153,28 @@ export function getExportHTMLContent(lesson, selections, isTeacher, paperSize = 
 
       </div>
     `;
-  };
+    
+    allHtml += pageHtml;
+    if (index < lessonsDataList.length - 1) {
+      allHtml += `<div style="page-break-after: always; height: 0;"></div>`;
+    }
+  });
 
-  const studentPage = generatePage(false);
-  const teacherPage = generatePage(true);
+  return allHtml;
+}
 
-  // Combine with page break
-  return `
+export function exportToWord(lessonsDataList, filename, paperSize = 'A4', margin = '2cm', customTitle = '', customWatermark = '') {
+  const studentPage = getExportHTMLContent(lessonsDataList, false, paperSize, customTitle, customWatermark);
+  const teacherPage = getExportHTMLContent(lessonsDataList, true, paperSize, customTitle, customWatermark);
+  
+  const htmlContent = `
     <div class="export-container">
       ${studentPage}
       <div style="page-break-after: always; height: 0;"></div>
       ${teacherPage}
     </div>
   `;
-}
 
-export function exportToWord(lesson, selections, filename, paperSize = 'A4', margin = '2cm') {
-  const htmlContent = getExportHTMLContent(lesson, selections, false, paperSize);
-  
   const header = `<html xmlns:v="urn:schemas-microsoft-com:vml"
     xmlns:o="urn:schemas-microsoft-com:office:office"
     xmlns:w="urn:schemas-microsoft-com:office:word"
@@ -164,38 +182,11 @@ export function exportToWord(lesson, selections, filename, paperSize = 'A4', mar
     xmlns="http://www.w3.org/TR/REC-html40">
     <head>
       <meta charset="utf-8">
-      <!--[if gte mso 9]><xml>
-       <w:WordDocument>
-        <w:View>Print</w:View>
-        <w:TrackMoves>false</w:TrackMoves>
-        <w:TrackFormatting/>
-        <w:ValidateAgainstSchemas/>
-        <w:SaveIfXMLInvalid>false</w:SaveIfXMLInvalid>
-        <w:IgnoreMixedContent>false</w:IgnoreMixedContent>
-        <w:AlwaysShowPlaceholderText>false</w:AlwaysShowPlaceholderText>
-        <w:DoNotPromoteQF/>
-        <w:LidThemeOther>EN-US</w:LidThemeOther>
-        <w:LidThemeAsian>ZH-TW</w:LidThemeAsian>
-        <w:LidThemeComplexScript>X-NONE</w:LidThemeComplexScript>
-        <w:Compatibility>
-         <w:BreakWrappedTables/>
-         <w:SnapToGridInCell/>
-         <w:WrapTextWithPunct/>
-         <w:UseAsianBreakRules/>
-         <w:DontGrowAutofit/>
-         <w:SplitPgBreakAndParaMark/>
-         <w:EnableOpenTypeKerning/>
-         <w:DontFlipMirrorIndents/>
-         <w:OverrideTableStyleHps/>
-         <w:UseFELayout/>
-        </w:Compatibility>
-       </w:WordDocument>
-      </xml><![endif]-->
       <style>
         body { font-family: '標楷體', 'BiauKai', 'DFKai-SB'; }
         @page WordSection1 { 
           size: ${paperSize}; 
-          margin: ${margin.top} ${margin.right} ${margin.bottom} ${margin.left};
+          margin: ${margin.top || margin} ${margin.right || margin} ${margin.bottom || margin} ${margin.left || margin};
           mso-header-margin: 1.27cm;
           mso-footer-margin: 1.27cm;
           mso-paper-source: 0;
@@ -207,15 +198,41 @@ export function exportToWord(lesson, selections, filename, paperSize = 'A4', mar
   
   const sourceHTML = header + '<div class="WordSection1">' + htmlContent + '</div>' + footer;
   
-  const blob = new Blob(['\ufeff', sourceHTML], {
+  const blob = new Blob(['﻿', sourceHTML], {
     type: 'application/msword'
   });
   
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = filename || `${lesson.title}_預習講義.doc`;
+  link.download = filename || `預習講義.doc`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+}
+
+export function exportToPDF(lessonsDataList, filename, customTitle = '', customWatermark = '') {
+  const studentPage = getExportHTMLContent(lessonsDataList, false, 'A4', customTitle, customWatermark);
+  const teacherPage = getExportHTMLContent(lessonsDataList, true, 'A4', customTitle, customWatermark);
+  
+  const htmlContent = `
+    <div class="export-container">
+      ${studentPage}
+      <div class="html2pdf__page-break"></div>
+      ${teacherPage}
+    </div>
+  `;
+  
+  const element = document.createElement('div');
+  element.innerHTML = htmlContent;
+  
+  const opt = {
+    margin:       10,
+    filename:     filename || '預習講義.pdf',
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2 },
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+  
+  html2pdf().set(opt).from(element).save();
 }

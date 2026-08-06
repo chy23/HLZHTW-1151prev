@@ -1,4 +1,4 @@
-export const lessonsData = [
+const _lessonsData = [
   {
     "id": 1,
     "title": "遇見自己",
@@ -2812,3 +2812,7 @@ export const lessonsData = [
     ]
   }
 ];
+
+export const database = {
+  '翰林-六上': _lessonsData
+};

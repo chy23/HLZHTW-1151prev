@@ -1,7 +1,16 @@
 import React from 'react';
+import { Pencil } from 'lucide-react';
 
 const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode }) => {
   if (!lesson) return <div className="p-8 text-center text-slate-500">請選擇一課</div>;
+
+  const handleEdit = (e, type, index, field) => {
+    const newValue = e.currentTarget.textContent;
+    if (lesson[type] && lesson[type][index]) {
+      lesson[type][index][field] = newValue;
+    }
+  };
+
 
   const getDisplayIndex = (type, originalIndex) => {
     if (!selections[type].has(originalIndex)) return '';
@@ -15,16 +24,25 @@ const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode }) =>
   const renderVocab = (v, index) => {
     const isSelected = selections.vocab.has(index);
     return (
-      <div key={index} className={`flex items-start gap-3 p-4 rounded-xl border-2 transition-all ${isSelected ? 'border-blue-200 bg-white shadow-sm' : 'border-slate-200 bg-slate-50 opacity-40 grayscale hover:opacity-70'}`}>
+      <div key={index} className={`flex items-start gap-3 p-4 rounded-xl border-2 transition-all ${isSelected ? 'border-blue-200 bg-white dark:bg-slate-800 shadow-sm' : 'border-slate-200 bg-slate-50 dark:bg-slate-900 opacity-40 grayscale hover:opacity-70'}`}>
         <input type="checkbox" checked={isSelected} onChange={() => toggleSelection('vocab', index)} className="mt-1.5 w-5 h-5 text-blue-600 rounded border-gray-300 cursor-pointer" />
         <div>
           <span className="text-lg font-bold mr-1">{getDisplayIndex('vocab', index)}</span>
           {isTeacherMode ? (
-            <span className="text-red-600 font-bold underline decoration-red-600 decoration-2 underline-offset-4 tracking-widest mr-1">{v.word}</span>
+            <span 
+              className="text-red-600 font-bold underline decoration-red-600 decoration-2 underline-offset-4 tracking-widest mr-1 outline-none focus:bg-blue-50 dark:focus:bg-slate-700 cursor-text"
+              contentEditable={true} 
+              suppressContentEditableWarning={true} 
+              onBlur={(e) => handleEdit(e, 'vocab', index, 'word')}
+            >{v.word}</span>
           ) : (
             <span className="text-slate-400 mr-1">（　　　　　）</span>
           )}
-          <span className="text-lg">：{v.meaning}</span>
+          <span className="text-lg flex-1 ml-1 outline-none focus:bg-blue-50 dark:focus:bg-slate-700 cursor-text"
+              contentEditable={true} 
+              suppressContentEditableWarning={true} 
+              onBlur={(e) => handleEdit(e, 'vocab', index, 'meaning')}
+            >：{v.meaning}</span>
         </div>
       </div>
     );
@@ -35,7 +53,7 @@ const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode }) =>
     const parts = item.sentence.split(/（\s*）/);
     
     return (
-      <div key={index} className={`flex items-start gap-3 p-4 rounded-xl border-2 transition-all ${isSelected ? 'border-blue-200 bg-white shadow-sm' : 'border-slate-200 bg-slate-50 opacity-40 grayscale hover:opacity-70'}`}>
+      <div key={index} className={`flex items-start gap-3 p-4 rounded-xl border-2 transition-all ${isSelected ? 'border-blue-200 bg-white dark:bg-slate-800 shadow-sm' : 'border-slate-200 bg-slate-50 dark:bg-slate-900 opacity-40 grayscale hover:opacity-70'}`}>
         <input type="checkbox" checked={isSelected} onChange={() => toggleSelection('fillIn', index)} className="mt-1 w-5 h-5 text-blue-600 rounded border-gray-300 cursor-pointer" />
         <div className="text-lg leading-loose">
           <span className="font-bold mr-1">{getDisplayIndex('fillIn', index)}</span>
@@ -59,11 +77,21 @@ const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode }) =>
   const renderQuestion = (q, index) => {
     const isSelected = selections.questions.has(index);
     return (
-      <div key={index} className={`flex items-start gap-3 p-5 rounded-xl border-2 transition-all ${isSelected ? 'border-blue-200 bg-white shadow-sm' : 'border-slate-200 bg-slate-50 opacity-40 grayscale hover:opacity-70'}`}>
+      <div key={index} className={`flex items-start gap-3 p-5 rounded-xl border-2 transition-all ${isSelected ? 'border-blue-200 bg-white dark:bg-slate-800 shadow-sm' : 'border-slate-200 bg-slate-50 dark:bg-slate-900 opacity-40 grayscale hover:opacity-70'}`}>
         <input type="checkbox" checked={isSelected} onChange={() => toggleSelection('questions', index)} className="mt-1 w-5 h-5 text-blue-600 rounded border-gray-300 cursor-pointer" />
         <div className="flex-1">
           <div className="flex items-center flex-wrap gap-2 mb-3">
-            <span className="font-bold text-lg">{getDisplayIndex('questions', index)}{q.q}</span>
+            <span className="font-bold text-lg flex items-start gap-1">
+              <span>{getDisplayIndex('questions', index)}</span>
+              <span 
+                className="outline-none focus:bg-blue-50 dark:focus:bg-slate-700 cursor-text"
+                contentEditable={true} 
+                suppressContentEditableWarning={true} 
+                onBlur={(e) => handleEdit(e, 'questions', index, 'q')}
+              >
+                {q.q}
+              </span>
+            </span>
             {isTeacherMode && (
               <span className={`text-sm text-white px-2.5 py-0.5 font-bold shrink-0 shadow-sm ${
                 q.type === '提取訊息' ? 'bg-blue-600' :
@@ -75,10 +103,20 @@ const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode }) =>
           </div>
           {isTeacherMode ? (
             <div className="text-red-600 font-bold bg-red-50 p-4 rounded-lg border border-red-100 text-lg">
-              答：{q.a}
+              <div className="flex gap-1">
+                <span className="shrink-0">答：</span>
+                <span 
+                  className="outline-none focus:bg-blue-50 dark:focus:bg-slate-700 cursor-text"
+                  contentEditable={true} 
+                  suppressContentEditableWarning={true} 
+                  onBlur={(e) => handleEdit(e, 'questions', index, 'a')}
+                >
+                  {q.a}
+                </span>
+              </div>
             </div>
           ) : (
-            <div className="h-28 bg-slate-50 border-2 border-dashed border-slate-200 rounded-lg w-full"></div>
+            <div className="h-28 bg-slate-50 dark:bg-slate-900 border-2 border-dashed border-slate-200 rounded-lg w-full"></div>
           )}
         </div>
       </div>
@@ -114,7 +152,7 @@ const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode }) =>
             <span className="bg-blue-600 text-white w-9 h-9 rounded-full flex items-center justify-center text-xl shadow-md">1</span>
             課前任務 1、讀讀看
           </h2>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-xl space-y-3">
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 text-xl space-y-3">
             <p>(1) 先朗讀課文三遍，標示出標點符號。；！？。</p>
             <p>(2) 自然段有 {isTeacherMode ? <span className="text-red-600 font-bold px-2">{lesson.paragraphs}</span> : '＿＿＿'} 段。</p>
             <p>(3) 圈出不懂的語詞、找重點句、句型、修辭。劃線標註段落重點句。</p>
@@ -140,7 +178,7 @@ const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode }) =>
               <span className="bg-blue-600 text-white w-9 h-9 rounded-full flex items-center justify-center text-xl shadow-md">2</span>
               課前任務 2、語詞解釋
             </h2>
-            <span className="text-sm font-medium bg-slate-100 text-slate-600 px-3 py-1 rounded-full">點擊核取方塊可排除題目</span>
+            <span className="text-sm font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full flex items-center gap-1"><Pencil className="w-3 h-3"/>點擊文字可直接修改，勾選可匯出</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {lesson.vocab.map((v, index) => renderVocab(v, index))}
@@ -154,10 +192,10 @@ const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode }) =>
               <span className="bg-blue-600 text-white w-9 h-9 rounded-full flex items-center justify-center text-xl shadow-md">3</span>
               課前任務 3、語詞選填
             </h2>
-            <span className="text-sm font-medium bg-slate-100 text-slate-600 px-3 py-1 rounded-full">點擊核取方塊可排除題目</span>
+            <span className="text-sm font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full flex items-center gap-1"><Pencil className="w-3 h-3"/>點擊文字可直接修改，勾選可匯出</span>
           </div>
           {wordBank.length > 0 && (
-            <div className="border border-slate-400 rounded-xl p-5 mb-5 text-2xl leading-loose bg-white shadow-sm flex flex-wrap gap-2 justify-center">
+            <div className="border border-slate-400 rounded-xl p-5 mb-5 text-2xl leading-loose bg-white dark:bg-slate-800 shadow-sm flex flex-wrap gap-2 justify-center">
               {wordBank.map((word, i) => <span key={i} className="font-bold">{word}</span>)}
             </div>
           )}
@@ -173,7 +211,7 @@ const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode }) =>
               <span className="bg-blue-600 text-white w-9 h-9 rounded-full flex items-center justify-center text-xl shadow-md">4</span>
               課前任務 4、文意預習
             </h2>
-            <span className="text-sm font-medium bg-slate-100 text-slate-600 px-3 py-1 rounded-full">點擊核取方塊可排除題目</span>
+            <span className="text-sm font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full flex items-center gap-1"><Pencil className="w-3 h-3"/>點擊文字可直接修改，勾選可匯出</span>
           </div>
           <div className="grid grid-cols-1 gap-5">
             {lesson.questions.map((q, index) => renderQuestion(q, index))}
