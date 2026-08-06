@@ -1,20 +1,44 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Pencil } from 'lucide-react';
+
+const EditableText = ({ text, onSave, isAnswer }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [val, setVal] = useState(text);
+
+  if (isEditing) {
+    return (
+      <input 
+        autoFocus
+        value={val}
+        onChange={e => setVal(e.target.value)}
+        onBlur={() => { setIsEditing(false); if(val !== text && val.trim() !== '') onSave(val); }}
+        onKeyDown={e => { if(e.key === 'Enter') e.target.blur(); }}
+        className={`border-b-2 border-blue-500 bg-blue-50 dark:bg-slate-700 dark:text-white px-1 outline-none min-w-[60px] max-w-full ${isAnswer ? 'text-red-600 font-bold' : ''}`}
+        style={{ width: `${Math.max(val.length + 1, 3)}ch` }}
+      />
+    );
+  }
+
+  return (
+    <span 
+      className={`cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 px-1 rounded transition-colors ${isAnswer ? 'text-red-600 font-bold' : ''}`}
+      onClick={() => { setVal(text); setIsEditing(true); }}
+      title="點擊修改內容"
+    >
+      {text}
+    </span>
+  );
+};
 
 const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode, onUpdate }) => {
   if (!lesson) return <div className="p-8 text-center text-slate-500">請選擇一課</div>;
 
-
-  const handleEdit = (type, index, field, currentValue) => {
-    const newValue = window.prompt("請修改內容：", currentValue);
-    if (newValue !== null && newValue.trim() !== "") {
-      if (lesson[type] && lesson[type][index]) {
-        lesson[type][index][field] = newValue;
-        if (onUpdate) onUpdate();
-      }
+  const handleSave = (type, index, field, newValue) => {
+    if (lesson[type] && lesson[type][index]) {
+      lesson[type][index][field] = newValue;
+      if (onUpdate) onUpdate();
     }
   };
-
 
   const getDisplayIndex = (type, originalIndex) => {
     if (!selections[type].has(originalIndex)) return '';
@@ -33,19 +57,15 @@ const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode, onUp
         <div>
           <span className="text-lg font-bold mr-1">{getDisplayIndex('vocab', index)}</span>
           {isTeacherMode ? (
-            <span 
-              className="text-red-600 font-bold underline decoration-red-600 decoration-2 underline-offset-4 tracking-widest mr-1 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 px-1 rounded transition-colors"
-              onClick={() => handleEdit('vocab', index, 'word', v.word)}
-              title="點擊修改內容"
-            >{v.word}</span>
+            <span className="underline decoration-red-600 decoration-2 underline-offset-4 tracking-widest mr-1">
+              <EditableText text={v.word} isAnswer={true} onSave={(val) => handleSave('vocab', index, 'word', val)} />
+            </span>
           ) : (
             <span className="text-slate-400 mr-1">（　　　　　）</span>
           )}
-          <span 
-              className="text-lg flex-1 ml-1 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 px-1 rounded transition-colors"
-              onClick={() => handleEdit('vocab', index, 'meaning', v.meaning)}
-              title="點擊修改內容"
-            >：{v.meaning}</span>
+          <span className="text-lg flex-1 ml-1">
+            ：<EditableText text={v.meaning} onSave={(val) => handleSave('vocab', index, 'meaning', val)} />
+          </span>
         </div>
       </div>
     );
@@ -59,25 +79,28 @@ const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode, onUp
       <div key={index} className={`flex items-start gap-3 p-4 rounded-xl border-2 transition-all ${isSelected ? 'border-blue-200 bg-white dark:bg-slate-800 shadow-sm' : 'border-slate-200 bg-slate-50 dark:bg-slate-900 opacity-40 grayscale hover:opacity-70'}`}>
         <input type="checkbox" checked={isSelected} onChange={() => toggleSelection('fillIn', index)} className="mt-1 w-5 h-5 text-blue-600 rounded border-gray-300 cursor-pointer" />
         <div className="text-lg leading-loose flex-1">
-          <span className="font-bold mr-1">{getDisplayIndex('fillIn', index)}</span>
-          <span 
-            className="cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 px-1 rounded transition-colors"
-            onClick={() => handleEdit('fillIn', index, 'sentence', item.sentence)}
-            title="點擊修改題目"
-          >
+          <div className="flex items-center gap-2 mb-1">
+            <span className="font-bold">{getDisplayIndex('fillIn', index)}</span>
+            <EditableText text={item.sentence} onSave={(val) => handleSave('fillIn', index, 'sentence', val)} />
+          </div>
+          <div className="pl-6">
             {parts.map((part, i) => (
               <React.Fragment key={i}>
                 {part}
                 {i < parts.length - 1 && (
                   <span>
                     {isTeacherMode ? `( ` : ''}
-                    {isTeacherMode ? <span className="text-red-600 font-bold mx-1" onClick={(e) => { e.stopPropagation(); handleEdit('fillIn', index, 'answer', item.answer); }} title="點擊修改答案">{item.answer}</span> : <span className="text-slate-400">（　　　　　　　）</span>}
+                    {isTeacherMode ? (
+                      <EditableText text={item.answer} isAnswer={true} onSave={(val) => handleSave('fillIn', index, 'answer', val)} />
+                    ) : (
+                      <span className="text-slate-400">（　　　　　　　）</span>
+                    )}
                     {isTeacherMode ? ` )` : ''}
                   </span>
                 )}
               </React.Fragment>
             ))}
-          </span>
+          </div>
         </div>
       </div>
     );
@@ -92,13 +115,7 @@ const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode, onUp
           <div className="flex items-center flex-wrap gap-2 mb-3">
             <span className="font-bold text-lg flex items-start gap-1">
               <span>{getDisplayIndex('questions', index)}</span>
-              <span 
-                className="cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 px-1 rounded transition-colors"
-                onClick={() => handleEdit('questions', index, 'q', q.q)}
-                title="點擊修改內容"
-              >
-                {q.q}
-              </span>
+              <EditableText text={q.q} onSave={(val) => handleSave('questions', index, 'q', val)} />
             </span>
             {isTeacherMode && (
               <span className={`text-sm text-white px-2.5 py-0.5 font-bold shrink-0 shadow-sm ${
@@ -113,13 +130,7 @@ const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode, onUp
             <div className="text-red-600 font-bold bg-red-50 p-4 rounded-lg border border-red-100 text-lg">
               <div className="flex gap-1">
                 <span className="shrink-0">答：</span>
-                <span 
-                  className="cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 px-1 rounded transition-colors"
-                  onClick={() => handleEdit('questions', index, 'a', q.a)}
-                  title="點擊修改內容"
-                >
-                  {q.a}
-                </span>
+                <EditableText text={q.a} onSave={(val) => handleSave('questions', index, 'a', val)} />
               </div>
             </div>
           ) : (
@@ -139,13 +150,13 @@ const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode, onUp
     <div className="max-w-5xl mx-auto" style={{ fontFamily: "'標楷體', 'BiauKai', 'DFKai-SB', sans-serif" }}>
       {/* Header */}
       <div className="text-center mb-10 pb-6 border-b-2 border-slate-200">
-        <h1 className="text-3xl md:text-4xl font-bold mb-6 text-slate-800">
+        <h1 className="text-3xl md:text-4xl font-bold mb-6 text-slate-800 dark:text-slate-100">
           115六上國語預習講義 翰林版 第 {lesson.id} 課 {lesson.title} 作者：{lesson.author} 
           <span className={isTeacherMode ? 'text-red-600 ml-3' : 'text-slate-500 ml-3'}>
             （{isTeacherMode ? '教用版' : '學用版'}）
           </span>
         </h1>
-        <div className="flex justify-end gap-8 text-xl text-slate-700">
+        <div className="flex justify-end gap-8 text-xl text-slate-700 dark:text-slate-300">
           <span>班級：_______</span>
           <span>座號：_______</span>
           <span>姓名：_____________</span>
@@ -155,11 +166,11 @@ const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode, onUp
       <div className="space-y-12">
         {/* Task 1 */}
         <section>
-          <h2 className="text-2xl font-bold mb-5 flex items-center gap-3 text-slate-800">
+          <h2 className="text-2xl font-bold mb-5 flex items-center gap-3 text-slate-800 dark:text-slate-100">
             <span className="bg-blue-600 text-white w-9 h-9 rounded-full flex items-center justify-center text-xl shadow-md">1</span>
             課前任務 1、讀讀看
           </h2>
-          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 text-xl space-y-3">
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 text-xl space-y-3">
             <p>(1) 先朗讀課文三遍，標示出標點符號。；！？。</p>
             <p>(2) 自然段有 {isTeacherMode ? <span className="text-red-600 font-bold px-2">{lesson.paragraphs}</span> : '＿＿＿'} 段。</p>
             <p>(3) 圈出不懂的語詞、找重點句、句型、修辭。劃線標註段落重點句。</p>
@@ -181,7 +192,7 @@ const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode, onUp
         {/* Task 2 */}
         <section>
           <div className="flex justify-between items-center mb-5">
-            <h2 className="text-2xl font-bold flex items-center gap-3 text-slate-800">
+            <h2 className="text-2xl font-bold flex items-center gap-3 text-slate-800 dark:text-slate-100">
               <span className="bg-blue-600 text-white w-9 h-9 rounded-full flex items-center justify-center text-xl shadow-md">2</span>
               課前任務 2、語詞解釋
             </h2>
@@ -195,7 +206,7 @@ const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode, onUp
         {/* Task 3 */}
         <section>
           <div className="flex justify-between items-center mb-5">
-            <h2 className="text-2xl font-bold flex items-center gap-3 text-slate-800">
+            <h2 className="text-2xl font-bold flex items-center gap-3 text-slate-800 dark:text-slate-100">
               <span className="bg-blue-600 text-white w-9 h-9 rounded-full flex items-center justify-center text-xl shadow-md">3</span>
               課前任務 3、語詞選填
             </h2>
@@ -214,7 +225,7 @@ const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode, onUp
         {/* Task 4 */}
         <section>
           <div className="flex justify-between items-center mb-5">
-            <h2 className="text-2xl font-bold flex items-center gap-3 text-slate-800">
+            <h2 className="text-2xl font-bold flex items-center gap-3 text-slate-800 dark:text-slate-100">
               <span className="bg-blue-600 text-white w-9 h-9 rounded-full flex items-center justify-center text-xl shadow-md">4</span>
               課前任務 4、文意預習
             </h2>
