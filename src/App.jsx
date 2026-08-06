@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { FileText, FileDown, BookOpen, GraduationCap, Settings2, X, Moon, Sun } from 'lucide-react'
 import LessonViewer from './components/LessonViewer'
-import { database } from './data/lessonsData'
+import { database as initialDatabase } from './data/lessonsData'
 import { exportToWord, exportToPDF } from './utils/exportUtils'
 
 function App() {
+  const [db, setDb] = useState(() => JSON.parse(JSON.stringify(initialDatabase)));
   const [currentSemester, setCurrentSemester] = useState('翰林-六上');
-  const lessonsData = database[currentSemester];
+  const lessonsData = db[currentSemester];
   const [currentLesson, setCurrentLesson] = useState(lessonsData[0]);
   const [isTeacherMode, setIsTeacherMode] = useState(false);
   const [selections, setSelections] = useState({
@@ -152,10 +153,10 @@ function App() {
               onChange={(e) => {
                 const newSem = e.target.value;
                 setCurrentSemester(newSem);
-                setCurrentLesson(database[newSem][0]);
+                setCurrentLesson(db[newSem][0]);
               }}
             >
-              {Object.keys(database).map(sem => (
+              {Object.keys(db).map(sem => (
                 <option key={sem} value={sem}>{sem}</option>
               ))}
             </select>
