@@ -1,13 +1,17 @@
 import React from 'react';
 import { Pencil } from 'lucide-react';
 
-const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode }) => {
+const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode, onUpdate }) => {
   if (!lesson) return <div className="p-8 text-center text-slate-500">請選擇一課</div>;
 
-  const handleEdit = (e, type, index, field) => {
-    const newValue = e.currentTarget.textContent;
-    if (lesson[type] && lesson[type][index]) {
-      lesson[type][index][field] = newValue;
+
+  const handleEdit = (type, index, field, currentValue) => {
+    const newValue = window.prompt("請修改內容：", currentValue);
+    if (newValue !== null && newValue.trim() !== "") {
+      if (lesson[type] && lesson[type][index]) {
+        lesson[type][index][field] = newValue;
+        if (onUpdate) onUpdate();
+      }
     }
   };
 
@@ -30,18 +34,17 @@ const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode }) =>
           <span className="text-lg font-bold mr-1">{getDisplayIndex('vocab', index)}</span>
           {isTeacherMode ? (
             <span 
-              className="text-red-600 font-bold underline decoration-red-600 decoration-2 underline-offset-4 tracking-widest mr-1 outline-none focus:bg-blue-50 dark:focus:bg-slate-700 cursor-text"
-              contentEditable={true} 
-              suppressContentEditableWarning={true} 
-              onBlur={(e) => handleEdit(e, 'vocab', index, 'word')}
+              className="text-red-600 font-bold underline decoration-red-600 decoration-2 underline-offset-4 tracking-widest mr-1 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 px-1 rounded transition-colors"
+              onClick={() => handleEdit('vocab', index, 'word', v.word)}
+              title="點擊修改內容"
             >{v.word}</span>
           ) : (
             <span className="text-slate-400 mr-1">（　　　　　）</span>
           )}
-          <span className="text-lg flex-1 ml-1 outline-none focus:bg-blue-50 dark:focus:bg-slate-700 cursor-text"
-              contentEditable={true} 
-              suppressContentEditableWarning={true} 
-              onBlur={(e) => handleEdit(e, 'vocab', index, 'meaning')}
+          <span 
+              className="text-lg flex-1 ml-1 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 px-1 rounded transition-colors"
+              onClick={() => handleEdit('vocab', index, 'meaning', v.meaning)}
+              title="點擊修改內容"
             >：{v.meaning}</span>
         </div>
       </div>
@@ -55,20 +58,26 @@ const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode }) =>
     return (
       <div key={index} className={`flex items-start gap-3 p-4 rounded-xl border-2 transition-all ${isSelected ? 'border-blue-200 bg-white dark:bg-slate-800 shadow-sm' : 'border-slate-200 bg-slate-50 dark:bg-slate-900 opacity-40 grayscale hover:opacity-70'}`}>
         <input type="checkbox" checked={isSelected} onChange={() => toggleSelection('fillIn', index)} className="mt-1 w-5 h-5 text-blue-600 rounded border-gray-300 cursor-pointer" />
-        <div className="text-lg leading-loose">
+        <div className="text-lg leading-loose flex-1">
           <span className="font-bold mr-1">{getDisplayIndex('fillIn', index)}</span>
-          {parts.map((part, i) => (
-            <React.Fragment key={i}>
-              {part}
-              {i < parts.length - 1 && (
-                <span>
-                  {isTeacherMode ? `( ` : ''}
-                  {isTeacherMode ? <span className="text-red-600 font-bold mx-1">{item.answer}</span> : <span className="text-slate-400">（　　　　　　　）</span>}
-                  {isTeacherMode ? ` )` : ''}
-                </span>
-              )}
-            </React.Fragment>
-          ))}
+          <span 
+            className="cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 px-1 rounded transition-colors"
+            onClick={() => handleEdit('fillIn', index, 'sentence', item.sentence)}
+            title="點擊修改題目"
+          >
+            {parts.map((part, i) => (
+              <React.Fragment key={i}>
+                {part}
+                {i < parts.length - 1 && (
+                  <span>
+                    {isTeacherMode ? `( ` : ''}
+                    {isTeacherMode ? <span className="text-red-600 font-bold mx-1" onClick={(e) => { e.stopPropagation(); handleEdit('fillIn', index, 'answer', item.answer); }} title="點擊修改答案">{item.answer}</span> : <span className="text-slate-400">（　　　　　　　）</span>}
+                    {isTeacherMode ? ` )` : ''}
+                  </span>
+                )}
+              </React.Fragment>
+            ))}
+          </span>
         </div>
       </div>
     );
@@ -84,10 +93,9 @@ const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode }) =>
             <span className="font-bold text-lg flex items-start gap-1">
               <span>{getDisplayIndex('questions', index)}</span>
               <span 
-                className="outline-none focus:bg-blue-50 dark:focus:bg-slate-700 cursor-text"
-                contentEditable={true} 
-                suppressContentEditableWarning={true} 
-                onBlur={(e) => handleEdit(e, 'questions', index, 'q')}
+                className="cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 px-1 rounded transition-colors"
+                onClick={() => handleEdit('questions', index, 'q', q.q)}
+                title="點擊修改內容"
               >
                 {q.q}
               </span>
@@ -106,10 +114,9 @@ const LessonViewer = ({ lesson, selections, toggleSelection, isTeacherMode }) =>
               <div className="flex gap-1">
                 <span className="shrink-0">答：</span>
                 <span 
-                  className="outline-none focus:bg-blue-50 dark:focus:bg-slate-700 cursor-text"
-                  contentEditable={true} 
-                  suppressContentEditableWarning={true} 
-                  onBlur={(e) => handleEdit(e, 'questions', index, 'a')}
+                  className="cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 px-1 rounded transition-colors"
+                  onClick={() => handleEdit('questions', index, 'a', q.a)}
+                  title="點擊修改內容"
                 >
                   {q.a}
                 </span>

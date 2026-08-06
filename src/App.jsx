@@ -212,7 +212,8 @@ function App() {
             lesson={currentLesson} 
             selections={selections} 
             toggleSelection={toggleSelection} 
-            isTeacherMode={isTeacherMode} 
+            isTeacherMode={isTeacherMode}
+            onUpdate={() => setSelections({...selections})}
           />
         </div>
       </main>
